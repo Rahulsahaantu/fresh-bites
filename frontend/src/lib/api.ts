@@ -100,8 +100,8 @@ export async function createOrder(orderData: {
   subtotal: number;
   deliveryFee: number;
   total: number;
-}): Promise<ApiResponse<Order & { orderId: string }>> {
-  return apiFetch<Order & { orderId: string }>("/api/orders", {
+}): Promise<ApiResponse<Order & { orderId: string; paymentUrl?: string }>> {
+  return apiFetch<Order & { orderId: string; paymentUrl?: string }>("/api/orders", {
     method: "POST",
     body: JSON.stringify(orderData),
     cache: "no-store",

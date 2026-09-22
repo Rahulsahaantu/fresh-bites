@@ -56,7 +56,8 @@ export interface Order {
   subtotal: number;
   deliveryFee: number;
   total: number;
-  status: "pending" | "confirmed" | "preparing" | "delivered" | "cancelled";
+  status: "pending" | "confirmed" | "preparing" | "delivered" | "cancelled" | string;
+  paymentUrl?: string;
   createdAt: string;
 }
 
