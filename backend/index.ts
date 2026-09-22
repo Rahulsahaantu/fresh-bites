@@ -10,9 +10,18 @@ import jwt from "jsonwebtoken";
 import { MongoClient, ObjectId, ServerApiVersion, type Db } from "mongodb";
 import multer from "multer";
 import path from "path";
+import fs from "fs";
+import SSLCommerzPayment from "sslcommerz-lts";
 
 const app: Express = express();
 const PORT = process.env.PORT || 5000;
+
+// ---------------------------------------------------------------------------
+// SSLCommerz Configuration
+// ---------------------------------------------------------------------------
+const store_id = process.env.SSLCOMMERZ_STORE_ID || "testbox";
+const store_passwd = process.env.SSLCOMMERZ_STORE_PASSWD || "qwerty";
+const is_live = process.env.SSLCOMMERZ_IS_LIVE === "true";
 
 // ---------------------------------------------------------------------------
 // Middleware
@@ -37,6 +46,7 @@ app.use(
   })
 );
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
@@ -531,19 +541,124 @@ app.post("/api/orders", async (req: Request, res: Response) => {
       subtotal: Number(subtotal),
       deliveryFee: Number(deliveryFee),
       total: Number(total),
-      status: "confirmed",
+      status: "pending", // Initially pending for payment
       createdAt: new Date(),
     };
 
     const result = await ordersCollection.insertOne(order);
+    const orderId = result.insertedId.toString();
 
-    apiResponse(res, 201, "Order placed successfully", {
-      orderId: result.insertedId,
-      ...order,
+    // SSL Commerz Initialization
+    const data = {
+        total_amount: order.total,
+        currency: 'BDT',
+        tran_id: orderId, // use orderId as tran_id
+        success_url: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/payment/success?tran_id=${orderId}`,
+        fail_url: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/payment/fail?tran_id=${orderId}`,
+        cancel_url: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/payment/cancel?tran_id=${orderId}`,
+        ipn_url: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/payment/ipn`,
+        shipping_method: 'Courier',
+        product_name: 'Food Order',
+        product_category: 'Food',
+        product_profile: 'general',
+        cus_name: order.customer.name,
+        cus_email: order.customer.email || 'customer@example.com',
+        cus_add1: order.customer.address,
+        cus_city: 'Dhaka',
+        cus_state: 'Dhaka',
+        cus_postcode: '1000',
+        cus_country: 'Bangladesh',
+        cus_phone: order.customer.phone,
+        ship_name: order.customer.name,
+        ship_add1: order.customer.address,
+        ship_city: 'Dhaka',
+        ship_state: 'Dhaka',
+        ship_postcode: 1000,
+        ship_country: 'Bangladesh',
+    };
+
+    const sslcz = new SSLCommerzPayment(
+      process.env.STORE_ID,
+      process.env.STORE_PASS,
+      process.env.IS_LIVE === "true"
+    );
+
+    sslcz.init(data).then((apiResponse: any) => {
+        // Redirect the user to payment gateway
+        let GatewayPageURL = apiResponse.GatewayPageURL;
+        res.status(201).json({
+          success: true,
+          message: "Order placed, redirecting to payment gateway...",
+          data: {
+            orderId: orderId,
+            paymentUrl: GatewayPageURL
+          }
+        });
+    }).catch((err: any) => {
+      console.error("SSL Init Error:", err);
+      apiResponse(res, 500, "Failed to initialize payment gateway");
     });
   } catch (error) {
     console.error("Error creating order:", error);
     apiResponse(res, 500, "Failed to create order");
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Payment Callbacks
+// ---------------------------------------------------------------------------
+app.post("/api/payment/success", async (req: Request, res: Response) => {
+  try {
+    const ordersCollection = db.collection("orders");
+    const tran_id = (req.query.tran_id || req.body.tran_id) as string;
+    
+    await ordersCollection.updateOne(
+      { _id: new ObjectId(tran_id) },
+      { $set: { status: "confirmed" } }
+    );
+    
+    // Redirect to frontend success page
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5001';
+    res.redirect(`${frontendUrl}/order/${tran_id}?status=success`);
+  } catch (error) {
+    console.error("Success callback error:", error);
+    res.status(500).send("Server Error");
+  }
+});
+
+app.post("/api/payment/fail", async (req: Request, res: Response) => {
+  try {
+    const ordersCollection = db.collection("orders");
+    const tran_id = (req.query.tran_id || req.body.tran_id) as string;
+    
+    await ordersCollection.updateOne(
+      { _id: new ObjectId(tran_id) },
+      { $set: { status: "cancelled" } }
+    );
+    
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5001';
+    res.redirect(`${frontendUrl}/order/${tran_id}?status=fail`);
+  } catch (error) {
+    console.error("Fail callback error:", error);
+    res.status(500).send("Server Error");
+  }
+});
+
+app.post("/api/payment/cancel", async (req: Request, res: Response) => {
+  try {
+    const ordersCollection = db.collection("orders");
+    const tran_id = (req.query.tran_id || req.body.tran_id) as string;
+    
+    await ordersCollection.updateOne(
+      { _id: new ObjectId(tran_id) },
+      { $set: { status: "cancelled" } }
+    );
+    
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5001';
+    res.redirect(`${frontendUrl}/order/${tran_id}?status=cancel`);
+  } catch (error) {
+    console.error("Cancel callback error:", error);
+    res.status(500).send("Server Error");
   }
 });
 

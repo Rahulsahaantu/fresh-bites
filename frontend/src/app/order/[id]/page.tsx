@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import Container from "@/components/shared/Container";
@@ -9,11 +9,13 @@ import { LoadingSpinner } from "@/components/shared/LoadingState";
 import ErrorState from "@/components/shared/ErrorState";
 import { getOrderById } from "@/lib/api";
 import type { Order } from "@/lib/types";
-import { CheckCircle2, Package, Truck, Clock, ArrowRight, MapPin } from "lucide-react";
+import { CheckCircle2, Package, Truck, Clock, ArrowRight, MapPin, XCircle, AlertCircle } from "lucide-react";
 
-export default function OrderConfirmationPage() {
+function OrderConfirmationContent() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const statusParam = searchParams.get("status");
   const id = params.id as string;
 
   const [order, setOrder] = useState<Order | null>(null);
@@ -66,21 +68,39 @@ export default function OrderConfirmationPage() {
     minute: "2-digit",
   });
 
+  const isFailed = statusParam === "fail" || statusParam === "cancel" || order.status === "cancelled";
+
   return (
     <div className="bg-primary-bg-color min-h-screen">
       <Container className="py-10 md:py-16">
         <div className="max-w-3xl mx-auto">
-          {/* Success Header */}
+          {/* Status Header */}
           <div className="text-center mb-10 animate-in zoom-in duration-500">
-            <div className="inline-flex items-center justify-center h-20 w-20 bg-green-100 rounded-full mb-6">
-              <CheckCircle2 className="h-10 w-10 text-green-600" />
-            </div>
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Order Confirmed!
-            </h1>
-            <p className="text-warm-text text-lg">
-              Thank you for your order, {order.customer.name.split(" ")[0]}. Your delicious food is on the way.
-            </p>
+            {isFailed ? (
+              <>
+                <div className="inline-flex items-center justify-center h-20 w-20 bg-red-100 rounded-full mb-6">
+                  <XCircle className="h-10 w-10 text-red-600" />
+                </div>
+                <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                  Payment Failed
+                </h1>
+                <p className="text-warm-text text-lg">
+                  Unfortunately, your payment could not be processed. Please try placing the order again.
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="inline-flex items-center justify-center h-20 w-20 bg-green-100 rounded-full mb-6">
+                  <CheckCircle2 className="h-10 w-10 text-green-600" />
+                </div>
+                <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                  Order Confirmed!
+                </h1>
+                <p className="text-warm-text text-lg">
+                  Thank you for your order, {order.customer.name.split(" ")[0]}. Your payment was successful.
+                </p>
+              </>
+            )}
           </div>
 
           <div className="space-y-6">
@@ -171,7 +191,7 @@ export default function OrderConfirmationPage() {
                 <div className="flex justify-between text-sm">
                   <span className="text-warm-muted">Delivery Fee</span>
                   <span className={`font-medium ${order.deliveryFee === 0 ? "text-green-600" : "text-gray-900"}`}>
-                    {order.deliveryFee === 0 ? "Free" : `৳৳{order.deliveryFee.toLocaleString()}`}
+                    {order.deliveryFee === 0 ? "Free" : `৳${order.deliveryFee.toLocaleString()}`}
                   </span>
                 </div>
                 <div className="flex justify-between pt-3 border-t border-gray-100">
@@ -201,5 +221,17 @@ export default function OrderConfirmationPage() {
         </div>
       </Container>
     </div>
+  );
+}
+
+export default function OrderConfirmationPage() {
+  return (
+    <Suspense fallback={
+      <div className="bg-primary-bg-color min-h-screen">
+        <LoadingSpinner />
+      </div>
+    }>
+      <OrderConfirmationContent />
+    </Suspense>
   );
 }

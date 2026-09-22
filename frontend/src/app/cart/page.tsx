@@ -120,7 +120,7 @@ export default function CartPage() {
                       size="sm"
                     />
                     <span className="font-bold text-gray-900">
-                      ${(item.price * item.quantity).toLocaleString()}
+                      ৳{(item.price * item.quantity).toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -143,7 +143,7 @@ export default function CartPage() {
                 <div className="flex justify-between text-sm">
                   <span className="text-warm-muted">Delivery Fee</span>
                   <span className={`font-medium ${deliveryFee === 0 ? "text-green-600" : "text-gray-900"}`}>
-                    {deliveryFee === 0 ? "Free" : `৳৳{deliveryFee.toLocaleString()}`}
+                    {deliveryFee === 0 ? "Free" : `৳${deliveryFee.toLocaleString()}`}
                   </span>
                 </div>
                 <hr className="border-gray-100" />

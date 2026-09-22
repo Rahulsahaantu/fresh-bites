@@ -98,8 +98,12 @@ export default function CheckoutPage() {
 
       if (res.success && res.data) {
         clearCart();
-        const orderId = res.data.orderId || res.data._id;
-        router.push(`/order/${orderId}`);
+        if (res.data.paymentUrl) {
+          window.location.href = res.data.paymentUrl;
+        } else {
+          const orderId = res.data.orderId || res.data._id;
+          router.push(`/order/${orderId}`);
+        }
       } else {
         setSubmitError(res.message || "Failed to place order. Please try again.");
       }
@@ -331,7 +335,7 @@ export default function CheckoutPage() {
                         </p>
                       </div>
                       <span className="text-sm font-semibold text-gray-900 shrink-0">
-                        ${(item.price * item.quantity).toLocaleString()}
+                        ৳{(item.price * item.quantity).toLocaleString()}
                       </span>
                     </div>
                   ))}
@@ -348,7 +352,7 @@ export default function CheckoutPage() {
                   <div className="flex justify-between text-sm">
                     <span className="text-warm-muted">Delivery</span>
                     <span className={`font-medium ${deliveryFee === 0 ? "text-green-600" : ""}`}>
-                      {deliveryFee === 0 ? "Free" : `৳৳{deliveryFee.toLocaleString()}`}
+                      {deliveryFee === 0 ? "Free" : `৳${deliveryFee.toLocaleString()}`}
                     </span>
                   </div>
                   <hr className="border-gray-100" />
@@ -378,7 +382,7 @@ export default function CheckoutPage() {
                       Placing Order...
                     </>
                   ) : (
-                    `Place Order — ৳৳{total.toLocaleString()}`
+                    `Place Order — ৳${total.toLocaleString()}`
                   )}
                 </button>
 
