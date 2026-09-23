@@ -213,30 +213,48 @@ export async function updateProfile(data: any): Promise<ApiResponse<any>> {
 // ---------------------------------------------------------------------------
 // Upload API
 // ---------------------------------------------------------------------------
+function compressImage(file: File, maxWidth = 800, maxHeight = 800, quality = 0.7): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new window.Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+      if (width > maxWidth || height > maxHeight) {
+        const ratio = Math.min(maxWidth / width, maxHeight / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL("image/jpeg", quality));
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Failed to load image"));
+    };
+    img.src = url;
+  });
+}
+
 export async function uploadImage(file: File): Promise<ApiResponse<{ url: string }>> {
-  const formData = new FormData();
-  formData.append("image", file);
-
-  const url = `${API_BASE}/api/upload`;
-  const headers: Record<string, string> = {};
-  if (globalToken) {
-    headers["Authorization"] = `Bearer ${globalToken}`;
-  }
-
   try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers,
-      body: formData,
-    });
-    const json = await res.json();
-    if (!res.ok) {
-      return { success: false, message: json.message || "Upload failed", data: null as any };
-    }
-    return json as ApiResponse<{ url: string }>;
+    const compressed = await compressImage(file);
+    return {
+      success: true,
+      message: "File uploaded successfully",
+      data: { url: compressed },
+    };
   } catch (error) {
     console.error("Upload error:", error);
-    return { success: false, message: "Network error during upload", data: null as any };
+    return {
+      success: false,
+      message: "Error processing image",
+      data: null as any,
+    };
   }
 }
 

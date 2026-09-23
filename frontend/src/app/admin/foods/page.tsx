@@ -6,13 +6,20 @@ import type { Food } from "@/lib/types";
 import Link from "next/link";
 import { FiPlus, FiEdit2, FiTrash2 } from "react-icons/fi";
 import Image from "next/image";
+import { useAuth } from "@/lib/auth";
 
 export default function AdminFoodsPage() {
   const [foods, setFoods] = useState<Food[]>([]);
   const [loading, setLoading] = useState(true);
+  const { isLoading: authLoading } = useAuth();
 
   const fetchFoods = async () => {
     setLoading(true);
+    // Ensure token is set before making the request
+    const token = localStorage.getItem("token");
+    if (token) {
+      api.setToken(token);
+    }
     const res = await getMyFoods();
     if (res.success && res.data) {
       setFoods(res.data);
@@ -21,8 +28,10 @@ export default function AdminFoodsPage() {
   };
 
   useEffect(() => {
-    fetchFoods();
-  }, []);
+    if (!authLoading) {
+      fetchFoods();
+    }
+  }, [authLoading]);
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this food item?")) return;
