@@ -41,7 +41,6 @@ async function run() {
         {
           $set: {
             price: newPrice,
-            adminEmail: "rahul0243@gmail.com",
           },
         }
       );
