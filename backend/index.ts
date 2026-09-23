@@ -270,8 +270,6 @@ app.get("/api/foods", async (req: Request, res: Response) => {
     
     if (vendor && typeof vendor === "string" && vendor !== "all") {
       filter.adminEmail = vendor;
-    } else {
-      filter.adminEmail = "rahul0243@gmail.com";
     }
 
     if (category && typeof category === "string" && category !== "all") {
