@@ -147,7 +147,8 @@ app.post("/api/upload", upload.single("image"), (req: Request, res: Response) =>
   if (!req.file) {
     return apiResponse(res, 400, "No file uploaded");
   }
-  const imageUrl = `/uploads/${req.file.filename}`;
+  const backendUrl = process.env.BACKEND_URL || "http://localhost:5000";
+  const imageUrl = `${backendUrl}/uploads/${req.file.filename}`;
   apiResponse(res, 200, "File uploaded successfully", { url: imageUrl });
 });
 
