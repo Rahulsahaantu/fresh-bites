@@ -226,7 +226,7 @@ export default function FoodDetailPage() {
                 ) : (
                   <>
                     <ShoppingCart className="h-5 w-5" />
-                    Add to Cart — ${(food.price * quantity).toLocaleString()}
+                    Add to Cart — ৳{(food.price * quantity).toLocaleString()}
                   </>
                 )}
               </button>

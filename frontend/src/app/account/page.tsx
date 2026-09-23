@@ -159,7 +159,7 @@ export default function AccountPage() {
                           {item.quantity}x {item.name}
                         </span>
                         <span className="font-medium text-gray-900">
-                          ${(item.price * item.quantity).toLocaleString()}
+                          ৳{(item.price * item.quantity).toLocaleString()}
                         </span>
                       </li>
                     ))}

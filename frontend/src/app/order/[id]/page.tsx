@@ -177,7 +177,7 @@ function OrderConfirmationContent() {
                       <p className="text-sm text-warm-muted">Qty: {item.quantity}</p>
                     </div>
                     <span className="font-semibold text-gray-900 shrink-0">
-                      ${(item.price * item.quantity).toLocaleString()}
+                      ৳{(item.price * item.quantity).toLocaleString()}
                     </span>
                   </div>
                 ))}

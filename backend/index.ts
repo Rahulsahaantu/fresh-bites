@@ -19,9 +19,8 @@ const PORT = process.env.PORT || 5000;
 // ---------------------------------------------------------------------------
 // SSLCommerz Configuration
 // ---------------------------------------------------------------------------
-const store_id = process.env.SSLCOMMERZ_STORE_ID || "testbox";
-const store_passwd = process.env.SSLCOMMERZ_STORE_PASSWD || "qwerty";
-const is_live = process.env.SSLCOMMERZ_IS_LIVE === "true";
+// Credentials are read directly from process.env in the SSLCommerzPayment
+// constructor (STORE_ID, STORE_PASS, IS_LIVE) — see the order creation route.
 
 // ---------------------------------------------------------------------------
 // Middleware
@@ -553,10 +552,10 @@ app.post("/api/orders", async (req: Request, res: Response) => {
         total_amount: order.total,
         currency: 'BDT',
         tran_id: orderId, // use orderId as tran_id
-        success_url: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/payment/success?tran_id=${orderId}`,
-        fail_url: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/payment/fail?tran_id=${orderId}`,
-        cancel_url: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/payment/cancel?tran_id=${orderId}`,
-        ipn_url: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/payment/ipn`,
+        success_url: `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/payment/success?tran_id=${orderId}`,
+        fail_url: `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/payment/fail?tran_id=${orderId}`,
+        cancel_url: `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/payment/cancel?tran_id=${orderId}`,
+        ipn_url: `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/payment/ipn`,
         shipping_method: 'Courier',
         product_name: 'Food Order',
         product_category: 'Food',
@@ -578,14 +577,14 @@ app.post("/api/orders", async (req: Request, res: Response) => {
     };
 
     const sslcz = new SSLCommerzPayment(
-      process.env.STORE_ID,
-      process.env.STORE_PASS,
+      process.env.STORE_ID || "testbox",
+      process.env.STORE_PASS || "qwerty",
       process.env.IS_LIVE === "true"
     );
 
-    sslcz.init(data).then((apiResponse: any) => {
+    sslcz.init(data).then((sslResponse: any) => {
         // Redirect the user to payment gateway
-        let GatewayPageURL = apiResponse.GatewayPageURL;
+        let GatewayPageURL = sslResponse.GatewayPageURL;
         res.status(201).json({
           success: true,
           message: "Order placed, redirecting to payment gateway...",
