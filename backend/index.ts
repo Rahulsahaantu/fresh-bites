@@ -49,15 +49,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(process.cwd(), "uploads"));
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 // ---------------------------------------------------------------------------
@@ -147,9 +139,8 @@ app.post("/api/upload", upload.single("image"), (req: Request, res: Response) =>
   if (!req.file) {
     return apiResponse(res, 400, "No file uploaded");
   }
-  const backendUrl = process.env.BACKEND_URL || "http://localhost:5000";
-  const imageUrl = `${backendUrl}/uploads/${req.file.filename}`;
-  apiResponse(res, 200, "File uploaded successfully", { url: imageUrl });
+  const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
+  apiResponse(res, 200, "File uploaded successfully", { url: base64Image });
 });
 
 // ---------------------------------------------------------------------------
