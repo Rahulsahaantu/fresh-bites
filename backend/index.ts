@@ -523,14 +523,26 @@ app.post("/api/orders", async (req: Request, res: Response) => {
       return apiResponse(res, 400, "Customer name, phone, and address are required");
     }
 
-    const order = {
-      items: items.map((item: { foodId: string; name: string; price: number; quantity: number; image?: string }) => ({
+    const foodIds = items.map((i: any) => new ObjectId(i.foodId));
+    const foods = await db.collection("foods").find({ _id: { $in: foodIds } }).toArray();
+
+    const enrichedItems = items.map((item: any) => {
+      const food = foods.find(f => f._id.toString() === item.foodId);
+      return {
         foodId: item.foodId,
         name: item.name,
         price: Number(item.price),
         quantity: Number(item.quantity),
         image: item.image || "",
-      })),
+        adminEmail: food?.adminEmail || "rahul0243@gmail.com",
+      };
+    });
+
+    const vendorEmails = [...new Set(enrichedItems.map((i: any) => i.adminEmail).filter(Boolean))];
+
+    const order = {
+      items: enrichedItems,
+      vendorEmails,
       customer: {
         name: customer.name,
         email: customer.email || "",
@@ -685,8 +697,15 @@ app.get("/api/orders/:id", async (req: Request, res: Response) => {
 app.get("/api/orders", verifyToken, async (req: Request, res: Response) => {
   try {
     const ordersCollection = db.collection("orders");
-    const user = (req as any).user;
-    const query = user.role === "admin" ? {} : { "customer.email": user.email };
+    const usersCollection = db.collection("users");
+    const userId = (req as any).user.id;
+    const user = await usersCollection.findOne({ _id: new ObjectId(userId) });
+    if (!user) return apiResponse(res, 404, "User not found");
+
+    const query = user.role === "admin" 
+        ? { vendorEmails: user.email } 
+        : { "customer.email": user.email };
+        
     const orders = await ordersCollection.find(query).sort({ createdAt: -1 }).toArray();
     apiResponse(res, 200, "Orders fetched successfully", orders);
   } catch (error) {

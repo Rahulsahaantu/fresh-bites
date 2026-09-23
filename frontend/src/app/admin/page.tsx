@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getOrders, getFoods } from "@/lib/api";
+import { getOrders, getMyFoods } from "@/lib/api";
 import { FiShoppingBag, FiDollarSign, FiList } from "react-icons/fi";
 import Link from "next/link";
 
@@ -18,7 +18,7 @@ export default function AdminDashboard() {
       try {
         const [ordersRes, foodsRes] = await Promise.all([
           getOrders(),
-          getFoods()
+          getMyFoods()
         ]);
 
         const orders = ordersRes.success ? ordersRes.data : [];
