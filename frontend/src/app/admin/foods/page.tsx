@@ -116,9 +116,9 @@ export default function AdminFoodsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
-                        <button className="p-2 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-colors">
+                        <Link href={`/admin/foods/${food._id}`} className="p-2 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-colors">
                           <FiEdit2 className="w-4 h-4" />
-                        </button>
+                        </Link>
                         <button 
                           onClick={() => handleDelete(food._id)}
                           className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
