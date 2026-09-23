@@ -12,7 +12,7 @@ if (!uri) {
 }
 
 const client = new MongoClient(uri, {
-  serverApi: { version: ServerApiVersion.v1, strict: true, deprecationErrors: true },
+  serverApi: { version: ServerApiVersion.v1, deprecationErrors: true },
 });
 
 const foods = [

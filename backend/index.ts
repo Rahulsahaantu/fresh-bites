@@ -49,7 +49,15 @@ app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
-const storage = multer.memoryStorage();
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(process.cwd(), "uploads"));
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
 const upload = multer({ storage });
 
 // ---------------------------------------------------------------------------
@@ -64,7 +72,6 @@ if (!uri) {
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
-    strict: true,
     deprecationErrors: true,
   },
 });
@@ -139,8 +146,8 @@ app.post("/api/upload", upload.single("image"), (req: Request, res: Response) =>
   if (!req.file) {
     return apiResponse(res, 400, "No file uploaded");
   }
-  const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
-  apiResponse(res, 200, "File uploaded successfully", { url: base64Image });
+  const imageUrl = `/uploads/${req.file.filename}`;
+  apiResponse(res, 200, "File uploaded successfully", { url: imageUrl });
 });
 
 // ---------------------------------------------------------------------------
